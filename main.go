@@ -139,6 +139,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Remove "danger: " prefix if approved by user
+	if isDanger && *yesSure && len(cmd) >= 8 && cmd[:8] == "danger: " {
+		cmd = cmd[8:]
+	}
+
 	// Only confirm for non-dangerous commands
 	requireConfirm := !*yesSure && !isDanger
 
