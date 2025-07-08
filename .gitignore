@@ -1,0 +1,27 @@
+# Go build artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Dependency directories
+vendor/
+
+# Editor and OS files
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# nlch project config (DO NOT COMMIT SECRETS)
+nlch.yaml
+
+# User config (for reference, but usually not present in repo)
+# ~/.config/nlch/config.yaml
+
+# Logs
+*.log

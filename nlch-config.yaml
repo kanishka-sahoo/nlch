@@ -1,0 +1,28 @@
+# The default provider to use for generating commands.
+# This must match one of the keys under the 'providers' section.
+default_provider: openrouter
+
+# Configuration for different LLM providers.
+providers:
+    # Configuration for the OpenRouter provider.
+    openrouter:
+        # Your OpenRouter API key.
+        key: "sk-or-v1-..."
+        # The default model to use for this provider.
+        # This can be overridden with the --model flag.
+        default_model: "openai/gpt-4o"
+
+    # Configuration for the Google Gemini provider.
+    google-gemini:
+        # Your Google Gemini API key.
+        key: "your-gemini-api-key"
+        # The default model to use for this provider.
+        default_model: "gemini-1.5-flash"
+
+    # Configuration for Ollama, needs custom url
+    ollama:
+        url: "https://your-ollama-url"
+        default_model: "llama-3.1:8b"
+
+    # we support these model providers:
+    # openrouter, gemini, openai, anthropic. ollama
