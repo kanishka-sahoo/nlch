@@ -1,6 +1,8 @@
 name: Build and Release Binaries
 
 on:
+  release:
+    types: [created]
   pull_request:
     branches:
       - main  # or your default branch name
@@ -43,6 +45,9 @@ jobs:
     name: Attach binaries to release
     needs: build
     runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'release' ||
+      (github.event_name == 'pull_request' && startsWith(github.head_ref, 'v'))
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -53,8 +58,16 @@ jobs:
         run: ls -R dist
 
       - name: Upload binaries to GitHub Release
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: dist/**/nlch-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload binaries as PR artifacts
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-binaries
+          path: dist/**/nlch-*
