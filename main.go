@@ -59,7 +59,7 @@ func main() {
 	dryRun := flag.Bool("dry-run", false, "Show the command but do not execute it")
 	model := flag.String("model", "", "Override the model to use")
 	providerFlag := flag.String("provider", "", "Override the provider to use")
-	yesRisk := flag.Bool("yes-im-aware-of-the-risk", false, "Bypass confirmation for dangerous commands")
+	yesSure := flag.Bool("yes-im-sure", false, "Bypass confirmation for all commands, including dangerous ones")
 	flag.Parse()
 
 	if *showVersion {
@@ -108,8 +108,15 @@ func main() {
 		log.Fatalf("Provider error: %v", err)
 	}
 
-	// Safety check
-	requireConfirm := shell.IsDangerousCommand(cmd) && !*yesRisk
+	// Safety and confirmation logic
+	isDanger := shell.IsDangerousCommand(cmd)
+	if isDanger && !*yesSure {
+		fmt.Println("This is a dangerous command, use --yes-im-sure to bypass.")
+		os.Exit(1)
+	}
+
+	// Only confirm for non-dangerous commands
+	requireConfirm := !*yesSure && !isDanger
 
 	// Execute or dry-run
 	exec := shell.Executor{DryRun: *dryRun}

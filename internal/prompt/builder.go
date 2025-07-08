@@ -47,7 +47,8 @@ func BuildPrompt(ctx *context.Context, userInput string) string {
 
 	return fmt.Sprintf(
 		"You are an expert terminal assistant. Given the following project context, generate a smart, concise shell command for the user's request. Do not wrap your command in code blocks, provide it directly.\n\n"+
-			"When running commands such as `ls`, make sure to pick flags to make it user-friendly. Don't show more detail than is necessary for the user's query.\n\n"+
+			"When running commands such as `ls`, make sure to pick flags to make it user-friendly. Avoid confusing the user with too much information.\n\n"+
+			"If the command is potentially dangerous and destructive, write 'danger: ' before the command.\n\n"+
 			"Working Directory: %s\n"+
 			"Files: %s\n"+
 			"Git Info:\n%s"+
