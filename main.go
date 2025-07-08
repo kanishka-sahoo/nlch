@@ -60,6 +60,7 @@ func main() {
 	model := flag.String("model", "", "Override the model to use")
 	providerFlag := flag.String("provider", "", "Override the provider to use")
 	yesSure := flag.Bool("yes-im-sure", false, "Bypass confirmation for all commands, including dangerous ones")
+	verbose := flag.Bool("verbose", false, "Show provider and model information")
 	flag.Parse()
 
 	if *showVersion {
@@ -100,6 +101,29 @@ func main() {
 	opts := provider.ProviderOptions{
 		Model:    *model,
 		Provider: providerName,
+	}
+
+	if *verbose {
+		fmt.Printf("Provider: %s\n", providerName)
+		modelUsed := opts.Model
+		// Try to get model from provider instance if not overridden
+		if modelUsed == "" {
+			// Try to get model from known provider types
+			switch p := prov.(type) {
+			case interface{ Model() string }:
+				modelUsed = p.Model()
+			case interface{ GetModel() string }:
+				modelUsed = p.GetModel()
+			case *provider.OpenRouterProvider:
+				modelUsed = p.Model
+			default:
+				// Fallback to config
+				if provCfg, ok := cfg.Providers[providerName]; ok {
+					modelUsed = provCfg.DefaultModel
+				}
+			}
+		}
+		fmt.Printf("Model: %s\n", modelUsed)
 	}
 
 	// Generate command

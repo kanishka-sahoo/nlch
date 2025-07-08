@@ -26,6 +26,15 @@ Or, for development:
 go run main.go "Describe your command here"
 ```
 
+### CLI Flags
+
+- `--dry-run` — Show the command but do not execute it
+- `--model` — Override the model to use
+- `--provider` — Override the provider to use
+- `--yes-im-sure` — Bypass confirmation for all commands, including dangerous ones
+- `--verbose` — Show provider and model information before generating the command
+- `--version` — Show version and exit
+
 ### Configuration
 
 See below for configuration file details.
@@ -44,6 +53,16 @@ total 8
 -rw-r--r-- 1 user user 79 Jul  8 10:56 main.go
 -rw-r--r-- 1 user user 49 Jul  8 10:43 go.mod
 -rw-r--r-- 1 user user  0 Jul  8 10:56 README.md
+```
+
+2. Verbose Usage:
+```
+$ nlch --verbose "find all go files in this directory"
+Provider: openrouter
+Model: openai/gpt-4.1-nano
+> Running command `find . -type f -name "*.go" -print0 | xargs -0 ls -l --color=auto`...
+> Confirm? [Y/n]: Y
+...
 ```
 
 2. Dry Run usage
