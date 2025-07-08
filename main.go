@@ -142,7 +142,7 @@ func main() {
 	}
 
 	// Remove danger prefix if approved by user
-	if isDanger && *yesSure && strings.HasPrefix(cmd, DangerPrefix) {
+	if *yesSure && strings.HasPrefix(cmd, DangerPrefix) {
 		cmd = cmd[len(DangerPrefix):]
 	}
 
