@@ -22,6 +22,6 @@ nlch.yaml
 
 # User config (for reference, but usually not present in repo)
 # ~/.config/nlch/config.yaml
-
 # Logs
+nlch
 *.log
