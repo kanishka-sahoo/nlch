@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/kanishka-sahoo/nlch/internal/config"
 	"github.com/kanishka-sahoo/nlch/internal/context"
@@ -133,10 +134,16 @@ func main() {
 	}
 
 	// Safety and confirmation logic
+	const DangerPrefix = "danger: "
 	isDanger := shell.IsDangerousCommand(cmd)
 	if isDanger && !*yesSure {
 		fmt.Println("This is a dangerous command, use --yes-im-sure to bypass.")
 		os.Exit(1)
+	}
+
+	// Remove danger prefix if approved by user
+	if *yesSure && strings.HasPrefix(cmd, DangerPrefix) {
+		cmd = cmd[len(DangerPrefix):]
 	}
 
 	// Only confirm for non-dangerous commands
