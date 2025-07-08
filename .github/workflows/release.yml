@@ -1,8 +1,9 @@
 name: Build and Release Binaries
 
 on:
-  release:
-    types: [created]
+  pull_request:
+    branches:
+      - main  # or your default branch name
   workflow_dispatch:
 
 jobs:
