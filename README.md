@@ -13,8 +13,21 @@
 
 ```sh
 go mod tidy         # Install dependencies
-go build -o nlch    # Build the binary
+make build          # Build binaries for all supported OS/ARCH
+make install        # Install the binary for your current OS
+
+# To clean up built binaries
+make clean
 ```
+
+This project supports cross-platform binary generation for:
+- Linux (amd64, arm64)
+- Windows (amd64)
+- macOS (amd64, arm64)
+
+The `make install` command will copy the correct binary to a standard location for your OS:
+- On Linux/macOS: `/usr/local/bin/nlch`
+- On Windows: `%USERPROFILE%\bin\nlch.exe`
 
 ### Run
 
