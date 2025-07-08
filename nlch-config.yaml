@@ -24,5 +24,5 @@ providers:
         url: "https://your-ollama-url"
         default_model: "llama-3.1:8b"
 
-    # we support these model providers:
+    # We support the following model providers:
     # openrouter, gemini, openai, anthropic. ollama
