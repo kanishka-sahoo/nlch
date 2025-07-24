@@ -54,6 +54,39 @@ func gatherContext() *context.Context {
 
 const version = "0.1.0"
 
+// cleanCommand removes markdown code blocks and extracts the actual command
+func cleanCommand(cmd string) string {
+	cmd = strings.TrimSpace(cmd)
+
+	// Remove markdown code blocks
+	if strings.HasPrefix(cmd, "```") {
+		lines := strings.Split(cmd, "\n")
+		if len(lines) > 1 {
+			// Remove first line (```bash or ```)
+			lines = lines[1:]
+		}
+		if len(lines) > 0 && strings.HasPrefix(lines[len(lines)-1], "```") {
+			// Remove last line (```)
+			lines = lines[:len(lines)-1]
+		}
+		cmd = strings.Join(lines, "\n")
+	}
+
+	// Remove backticks at start/end
+	cmd = strings.Trim(cmd, "`")
+
+	// Get first non-empty line as the command
+	lines := strings.Split(cmd, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" && !strings.HasPrefix(line, "#") {
+			return line
+		}
+	}
+
+	return strings.TrimSpace(cmd)
+}
+
 func main() {
 	// CLI flags
 	showVersion := flag.Bool("version", false, "Show version and exit")
@@ -133,25 +166,73 @@ func main() {
 		log.Fatalf("Provider error: %v", err)
 	}
 
-	// Safety and confirmation logic
+	// Clean up the command (remove markdown code blocks, etc.)
+	cmd = cleanCommand(cmd)
+
+	// Safety and confirmation logic - let LLM decide what's dangerous
 	const DangerPrefix = "danger: "
-	isDanger := shell.IsDangerousCommand(cmd)
+	isDanger := strings.HasPrefix(cmd, DangerPrefix)
 	if isDanger && !*yesSure {
 		fmt.Println("This is a dangerous command, use --yes-im-sure to bypass.")
 		os.Exit(1)
 	}
 
 	// Remove danger prefix if approved by user
-	if *yesSure && strings.HasPrefix(cmd, DangerPrefix) {
+	if *yesSure && isDanger {
 		cmd = cmd[len(DangerPrefix):]
 	}
 
 	// Only confirm for non-dangerous commands
 	requireConfirm := !*yesSure && !isDanger
 
-	// Execute or dry-run
+	// Execute or dry-run with retry logic
 	exec := shell.Executor{DryRun: *dryRun}
-	if err := exec.Run(cmd, requireConfirm); err != nil {
+	stdout, stderr, err := exec.Run(cmd, requireConfirm)
+
+	// If command failed and not in dry-run mode, ask LLM to fix it
+	if err != nil && !*dryRun {
+		fmt.Println("\n> Command failed. Asking LLM to provide a corrected version...")
+
+		// Build a prompt with the error information
+		errorPrompt := fmt.Sprintf(
+			"The previous command failed:\n"+
+				"Command: %s\n"+
+				"Error: %s\n"+
+				"Stderr: %s\n"+
+				"Stdout: %s\n\n"+
+				"Please provide a corrected command for the original request: %s\n"+
+				"Only return the corrected shell command, no explanations.",
+			cmd, err.Error(), stderr, stdout, userInput)
+
+		// Get corrected command from LLM
+		correctedCmd, corrErr := prov.GenerateCommand(*ctx, errorPrompt, opts)
+		if corrErr != nil {
+			log.Fatalf("Failed to get corrected command: %v", corrErr)
+		}
+
+		// Clean up the corrected command (remove markdown code blocks, etc.)
+		correctedCmd = cleanCommand(correctedCmd)
+
+		// Check if corrected command is dangerous
+		isCorrectedDanger := strings.HasPrefix(correctedCmd, DangerPrefix)
+		if isCorrectedDanger && !*yesSure {
+			fmt.Println("The corrected command is dangerous, use --yes-im-sure to bypass.")
+			os.Exit(1)
+		}
+
+		// Remove danger prefix if approved
+		if *yesSure && isCorrectedDanger {
+			correctedCmd = correctedCmd[len(DangerPrefix):]
+		}
+
+		// Execute corrected command (with confirmation if not bypassed)
+		requireCorrectedConfirm := !*yesSure && !isCorrectedDanger
+		fmt.Printf("\n> Trying corrected command: %s\n", correctedCmd)
+		_, _, corrErr = exec.Run(correctedCmd, requireCorrectedConfirm)
+		if corrErr != nil {
+			log.Fatalf("Corrected command also failed: %v", corrErr)
+		}
+	} else if err != nil {
 		log.Fatalf("Command failed: %v", err)
 	}
 }
