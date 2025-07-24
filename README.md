@@ -271,3 +271,51 @@ go test ./...
 ```
 
 ---
+
+## Release Process
+
+This project uses an automated release system based on version branches:
+
+### For Maintainers
+
+**Option 1 - Quick Release:**
+```sh
+./new-version.sh v1.0.0          # Create version branch
+# Make any final changes...
+git push origin v1.0.0           # Push changes
+# Create a merge/PR from v1.0.0 to main
+# GitHub Actions automatically creates the release when merged
+```
+
+**Option 2 - Using the Release Script:**
+```sh
+./release.sh v1.0.0 create       # Create version branch with auto-version bump
+# Make additional commits if needed...
+./release.sh v1.0.0 finish       # Merge to main and trigger release
+```
+
+**Option 3 - Manual Process:**
+```sh
+git checkout main
+git checkout -b v1.0.0
+# Update version in main.go, nlch.rb, internal/update/update.go
+git commit -m "Bump version to v1.0.0"
+git push origin v1.0.0
+# Merge to main via GitHub UI or command line
+# Release is automatically created by GitHub Actions
+```
+
+### How It Works
+
+1. **Version Branch**: Create a branch named with the semantic version (e.g., `v1.0.0`)
+2. **Merge to Main**: When the version branch is merged to main, GitHub Actions detects it
+3. **Automatic Release**: The workflow automatically:
+   - Builds binaries for all platforms (Linux, macOS, Windows)
+   - Creates a Git tag with the version
+   - Creates a GitHub release with all binaries
+   - Updates the Homebrew formula
+   - Generates release notes with changelog
+
+The release system supports both stable versions (`v1.0.0`) and pre-releases (`v1.0.0-beta1`).
+
+---
