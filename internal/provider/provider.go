@@ -2,6 +2,7 @@
 package provider
 
 import (
+	"github.com/kanishka-sahoo/nlch/internal/config"
 	"github.com/kanishka-sahoo/nlch/internal/context"
 )
 
@@ -38,4 +39,49 @@ func List() []Provider {
 		providers = append(providers, p)
 	}
 	return providers
+}
+
+// RegisterProvidersFromConfig registers all configured providers
+func RegisterProvidersFromConfig(configProviders map[string]config.ProviderConfig) {
+	for name, providerConfig := range configProviders {
+		switch name {
+		case "openrouter":
+			if providerConfig.Key != "" {
+				Register(&OpenRouterProvider{
+					APIKey: providerConfig.Key,
+					Model:  providerConfig.DefaultModel,
+				})
+			}
+		case "anthropic":
+			if providerConfig.Key != "" {
+				Register(&AnthropicProvider{
+					APIKey: providerConfig.Key,
+					Model:  providerConfig.DefaultModel,
+				})
+			}
+		case "openai":
+			if providerConfig.Key != "" {
+				Register(&OpenAIProvider{
+					APIKey: providerConfig.Key,
+					Model:  providerConfig.DefaultModel,
+				})
+			}
+		case "gemini":
+			if providerConfig.Key != "" {
+				Register(&GeminiProvider{
+					APIKey: providerConfig.Key,
+					Model:  providerConfig.DefaultModel,
+				})
+			}
+		case "ollama":
+			url := providerConfig.URL
+			if url == "" {
+				url = "http://localhost:11434"
+			}
+			Register(&OllamaProvider{
+				URL:   url,
+				Model: providerConfig.DefaultModel,
+			})
+		}
+	}
 }

@@ -1,4 +1,4 @@
-// Package provider implements the OpenRouter LLM provider.
+// Package provider implements the OpenAI GPT provider.
 package provider
 
 import (
@@ -13,19 +13,20 @@ import (
 	"github.com/kanishka-sahoo/nlch/internal/context"
 )
 
-type OpenRouterProvider struct {
+type OpenAIProvider struct {
 	APIKey string
 	Model  string
 }
 
-func (o *OpenRouterProvider) Name() string { return "openrouter" }
+func (o *OpenAIProvider) Name() string { return "openai" }
 
-func (o *OpenRouterProvider) GenerateCommand(ctx context.Context, promptStr string, opts ProviderOptions) (string, error) {
+func (o *OpenAIProvider) GenerateCommand(ctx context.Context, promptStr string, opts ProviderOptions) (string, error) {
 	model := o.Model
 	if opts.Model != "" {
 		model = opts.Model
 	}
-	// Prepare OpenAI-compatible request
+
+	// Prepare OpenAI API request
 	reqBody := map[string]any{
 		"model": model,
 		"messages": []map[string]string{
@@ -35,24 +36,27 @@ func (o *OpenRouterProvider) GenerateCommand(ctx context.Context, promptStr stri
 		"max_tokens":  128,
 		"temperature": 0.2,
 	}
+
 	body, _ := json.Marshal(reqBody)
-	req, err := http.NewRequest("POST", "https://openrouter.ai/api/v1/chat/completions", bytes.NewReader(body))
+	req, err := http.NewRequest("POST", "https://api.openai.com/v1/chat/completions", bytes.NewReader(body))
 	if err != nil {
 		return "", err
 	}
+
 	req.Header.Set("Authorization", "Bearer "+o.APIKey)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("HTTP-Referer", "https://github.com/kanishka-sahoo/nlch") // Optional, for OpenRouter compliance
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != 200 {
 		b, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("OpenRouter API error: %s", string(b))
+		return "", fmt.Errorf("OpenAI API error: %s", string(b))
 	}
+
 	var res struct {
 		Choices []struct {
 			Message struct {
@@ -60,12 +64,15 @@ func (o *OpenRouterProvider) GenerateCommand(ctx context.Context, promptStr stri
 			} `json:"message"`
 		} `json:"choices"`
 	}
+
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return "", err
 	}
+
 	if len(res.Choices) == 0 {
-		return "", errors.New("no choices returned from OpenRouter")
+		return "", errors.New("no choices returned from OpenAI")
 	}
+
 	// Extract the first line as the shell command
 	content := strings.TrimSpace(res.Choices[0].Message.Content)
 	cmd := strings.SplitN(content, "\n", 2)[0]
