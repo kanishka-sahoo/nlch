@@ -9,19 +9,18 @@
 class Nlch < Formula
   desc "Natural Language Command Helper - Generate terminal commands from natural language"
   homepage "https://github.com/kanishka-sahoo/nlch"
+  version "0.1.0" # This will be updated automatically by the release workflow
   
-  # These URLs and checksums need to be updated for each release
+  # These URLs and checksums will be updated automatically for each release
   if OS.mac?
     if Hardware::CPU.arm?
-      url "https://github.com/kanishka-sahoo/nlch/releases/latest/download/nlch-darwin-arm64"
+      url "https://github.com/kanishka-sahoo/nlch/releases/download/v#{version}/nlch-darwin-arm64"
       sha256 "REPLACE_WITH_ACTUAL_ARM64_SHA256"
     else
-      url "https://github.com/kanishka-sahoo/nlch/releases/latest/download/nlch-darwin-amd64"
+      url "https://github.com/kanishka-sahoo/nlch/releases/download/v#{version}/nlch-darwin-amd64"
       sha256 "REPLACE_WITH_ACTUAL_AMD64_SHA256"
     end
   end
-  
-  version "0.1.0" # Update this for each release
   
   def install
     if OS.mac?

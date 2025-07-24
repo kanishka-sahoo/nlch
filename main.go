@@ -55,6 +55,9 @@ func gatherContext() *context.Context {
 
 const version = "0.1.0"
 
+// This variable can be overridden at build time using -ldflags
+var buildVersion = version
+
 // cleanCommand removes markdown code blocks and extracts the actual command
 func cleanCommand(cmd string) string {
 	cmd = strings.TrimSpace(cmd)
@@ -96,6 +99,9 @@ func cleanCommand(cmd string) string {
 }
 
 func main() {
+	// Set the build version for the update package
+	update.BuildVersion = buildVersion
+
 	// CLI flags
 	showVersion := flag.Bool("version", false, "Show version and exit")
 	dryRun := flag.Bool("dry-run", false, "Show the command but do not execute it")
@@ -108,7 +114,7 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Printf("nlch version %s\n", version)
+		fmt.Printf("nlch version %s\n", buildVersion)
 		os.Exit(0)
 	}
 

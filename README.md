@@ -208,6 +208,40 @@ The project is highly modular, making it easy to add backends for additional mod
 
 ---
 
+## Development
+
+### Creating a Release
+
+For maintainers, creating a new release is automated:
+
+```sh
+# Create a new release (will trigger automated build and publish)
+./release.sh v1.0.0
+
+# Create a pre-release
+./release.sh v1.0.0-beta1
+```
+
+The release script will:
+1. Update version numbers in all relevant files
+2. Build and test the binary
+3. Create a git tag and push it
+4. Trigger GitHub Actions to build binaries for all platforms
+5. Automatically create a GitHub release with:
+   - Pre-built binaries for all supported platforms
+   - Checksums for verification
+   - Auto-generated changelog
+   - Installation instructions
+
+### Release Workflow
+
+The GitHub Actions workflow automatically:
+- **Builds** binaries for Linux, macOS, and Windows (multiple architectures)
+- **Creates** a GitHub release with detailed release notes
+- **Uploads** all binaries and checksums
+- **Updates** the Homebrew formula with new version and checksums
+- **Tests** the installation scripts against the new release
+
 ## Extending nlch
 
 ### Adding a New Provider
@@ -235,5 +269,53 @@ To run tests (if present):
 ```sh
 go test ./...
 ```
+
+---
+
+## Release Process
+
+This project uses an automated release system based on version branches:
+
+### For Maintainers
+
+**Option 1 - Quick Release:**
+```sh
+./new-version.sh v1.0.0          # Create version branch
+# Make any final changes...
+git push origin v1.0.0           # Push changes
+# Create a merge/PR from v1.0.0 to main
+# GitHub Actions automatically creates the release when merged
+```
+
+**Option 2 - Using the Release Script:**
+```sh
+./release.sh v1.0.0 create       # Create version branch with auto-version bump
+# Make additional commits if needed...
+./release.sh v1.0.0 finish       # Merge to main and trigger release
+```
+
+**Option 3 - Manual Process:**
+```sh
+git checkout main
+git checkout -b v1.0.0
+# Update version in main.go, nlch.rb, internal/update/update.go
+git commit -m "Bump version to v1.0.0"
+git push origin v1.0.0
+# Merge to main via GitHub UI or command line
+# Release is automatically created by GitHub Actions
+```
+
+### How It Works
+
+1. **Version Branch**: Create a branch named with the semantic version (e.g., `v1.0.0`)
+2. **Merge to Main**: When the version branch is merged to main, GitHub Actions detects it
+3. **Automatic Release**: The workflow automatically:
+   - Builds binaries for all platforms (Linux, macOS, Windows)
+   - Creates a Git tag with the version
+   - Creates a GitHub release with all binaries
+   - Updates the Homebrew formula
+   - Generates release notes with changelog
+
+The release system supports both stable versions (`v1.0.0`) and pre-releases (`v1.0.0-beta1`).
 
 ---
