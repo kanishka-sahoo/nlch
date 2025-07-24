@@ -13,6 +13,7 @@ import (
 	"github.com/kanishka-sahoo/nlch/internal/prompt"
 	"github.com/kanishka-sahoo/nlch/internal/provider"
 	"github.com/kanishka-sahoo/nlch/internal/shell"
+	"github.com/kanishka-sahoo/nlch/internal/update"
 )
 
 // Dummy provider for demonstration
@@ -102,10 +103,33 @@ func main() {
 	providerFlag := flag.String("provider", "", "Override the provider to use")
 	yesSure := flag.Bool("yes-im-sure", false, "Bypass confirmation for all commands, including dangerous ones")
 	verbose := flag.Bool("verbose", false, "Show provider and model information")
+	updateFlag := flag.Bool("update", false, "Check for and install updates")
+	checkUpdate := flag.Bool("check-update", false, "Check for updates without installing")
 	flag.Parse()
 
 	if *showVersion {
 		fmt.Printf("nlch version %s\n", version)
+		os.Exit(0)
+	}
+
+	if *updateFlag {
+		if err := update.AutoUpdate(false); err != nil {
+			log.Fatalf("Update failed: %v", err)
+		}
+		os.Exit(0)
+	}
+
+	if *checkUpdate {
+		release, hasUpdate, err := update.CheckForUpdates()
+		if err != nil {
+			log.Fatalf("Update check failed: %v", err)
+		}
+		if hasUpdate {
+			fmt.Printf("New version available: %s (current: v%s)\n", release.TagName, update.GetCurrentVersion())
+			fmt.Println("Run 'nlch --update' to install the update.")
+		} else {
+			fmt.Println("nlch is up to date.")
+		}
 		os.Exit(0)
 	}
 
@@ -115,6 +139,9 @@ func main() {
 		os.Exit(1)
 	}
 	userInput := flag.Arg(0)
+
+	// Check for updates in the background (non-blocking)
+	update.NotifyUpdateAvailable()
 
 	// Load config
 	cfg, err := config.Load()
