@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Release script for nlch
-# This script helps create new releases with proper versioning
+# This script helps create version branches for new releases
 
 set -e
 
@@ -37,11 +37,11 @@ validate_version() {
     fi
 }
 
-# Function to check if tag already exists
-check_tag_exists() {
-    local tag=$1
-    if git tag -l | grep -q "^$tag$"; then
-        log_error "Tag $tag already exists"
+# Function to check if branch already exists
+check_branch_exists() {
+    local branch=$1
+    if git branch -a | grep -q "origin/$branch\|$branch"; then
+        log_error "Branch $branch already exists"
         exit 1
     fi
 }
@@ -80,32 +80,61 @@ update_version_in_files() {
 # Main function
 main() {
     local version=$1
+    local action=${2:-"create"}
     
     if [[ -z "$version" ]]; then
-        echo "Usage: $0 <version>"
-        echo "Example: $0 v1.0.0"
-        echo "         $0 v1.0.0-beta1"
+        echo "Usage: $0 <version> [create|finish]"
+        echo ""
+        echo "Examples:"
+        echo "  $0 v1.0.0          # Create version branch v1.0.0"
+        echo "  $0 v1.0.0 create   # Same as above"
+        echo "  $0 v1.0.0 finish   # Merge v1.0.0 to main and create release"
+        echo ""
         exit 1
     fi
     
-    log_info "Starting release process for $version"
+    if [[ "$action" == "create" ]]; then
+        create_version_branch "$version"
+    elif [[ "$action" == "finish" ]]; then
+        finish_version_release "$version"
+    else
+        log_error "Invalid action: $action. Use 'create' or 'finish'"
+        exit 1
+    fi
+}
+
+# Function to create a version branch
+create_version_branch() {
+    local version=$1
+    
+    log_info "Creating version branch for $version"
     
     # Validate inputs
     validate_version "$version"
-    check_tag_exists "$version"
+    check_branch_exists "$version"
     check_clean_working_dir
     
     # Ensure we're on the main branch
     current_branch=$(git branch --show-current)
     if [[ "$current_branch" != "main" ]]; then
         log_warning "You're not on the main branch (current: $current_branch)"
-        read -p "Continue anyway? [y/N]: " -n 1 -r
+        read -p "Switch to main branch? [y/N]: " -n 1 -r
         echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            git checkout main
+        else
             log_info "Aborted"
             exit 0
         fi
     fi
+    
+    # Pull latest changes
+    log_info "Pulling latest changes from main..."
+    git pull origin main
+    
+    # Create version branch
+    log_info "Creating version branch $version..."
+    git checkout -b "$version"
     
     # Update version in files
     update_version_in_files "$version"
@@ -122,16 +151,57 @@ main() {
     git add main.go nlch.rb internal/update/update.go
     git commit -m "Bump version to $version"
     
-    # Create and push tag
-    log_info "Creating tag $version..."
-    git tag -a "$version" -m "Release $version"
-    
-    log_info "Pushing changes and tag..."
-    git push origin main
+    # Push version branch
+    log_info "Pushing version branch..."
     git push origin "$version"
     
-    log_success "Release $version created successfully!"
-    log_info "GitHub Actions will now build and create the release automatically."
+    log_success "Version branch $version created successfully!"
+    log_info "You can now:"
+    log_info "  1. Make additional commits to this branch if needed"
+    log_info "  2. When ready to release, run: $0 $version finish"
+    log_info "  3. Or merge the branch to main manually to trigger the release"
+}
+
+# Function to finish a version release
+finish_version_release() {
+    local version=$1
+    
+    log_info "Finishing release for $version"
+    
+    # Validate version
+    validate_version "$version"
+    check_clean_working_dir
+    
+    # Check if we're on the version branch
+    current_branch=$(git branch --show-current)
+    if [[ "$current_branch" != "$version" ]]; then
+        log_info "Switching to version branch $version..."
+        git checkout "$version"
+    fi
+    
+    # Pull latest changes on version branch
+    log_info "Pulling latest changes from version branch..."
+    git pull origin "$version"
+    
+    # Switch to main and merge
+    log_info "Switching to main and merging..."
+    git checkout main
+    git pull origin main
+    git merge "$version" --no-ff -m "Merge branch '$version' for release
+
+Release version $version"
+    
+    # Push main branch
+    log_info "Pushing main branch..."
+    git push origin main
+    
+    # Clean up version branch
+    log_info "Cleaning up version branch..."
+    git branch -d "$version"
+    git push origin --delete "$version"
+    
+    log_success "Release $version process completed successfully!"
+    log_info "GitHub Actions will now detect the version change and create the release automatically."
     log_info "You can monitor the progress at:"
     log_info "  https://github.com/kanishka-sahoo/nlch/actions"
     log_info ""
@@ -144,20 +214,27 @@ case "${1:-}" in
     --help|-h)
         echo "nlch Release Script"
         echo ""
-        echo "Usage: $0 <version>"
+        echo "Usage: $0 <version> [create|finish]"
         echo ""
         echo "Examples:"
-        echo "  $0 v1.0.0        # Create stable release"
-        echo "  $0 v1.0.0-beta1  # Create pre-release"
+        echo "  $0 v1.0.0          # Create version branch v1.0.0"
+        echo "  $0 v1.0.0 create   # Same as above"  
+        echo "  $0 v1.0.0 finish   # Merge v1.0.0 to main and create release"
         echo ""
-        echo "This script will:"
-        echo "  1. Validate the version format"
-        echo "  2. Check that the working directory is clean"
-        echo "  3. Update version in source files"
-        echo "  4. Build and test the binary"
-        echo "  5. Commit the version changes"
-        echo "  6. Create and push a git tag"
-        echo "  7. Trigger GitHub Actions to build and release"
+        echo "This script supports three workflows:"
+        echo ""
+        echo "Option 1 - Simple (all at once):"
+        echo "  $0 v1.0.0 finish   # Creates branch, commits, merges, and triggers release"
+        echo ""
+        echo "Option 2 - Step by step:"
+        echo "  $0 v1.0.0 create   # Creates branch with version bump"
+        echo "  # Make additional commits..."
+        echo "  $0 v1.0.0 finish   # Merges to main and triggers release"
+        echo ""
+        echo "Option 3 - Manual merge:"
+        echo "  $0 v1.0.0 create   # Creates branch with version bump"
+        echo "  # Make additional commits..."
+        echo "  # Manually merge to main via GitHub UI or git merge"
         exit 0
         ;;
 esac
