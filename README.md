@@ -208,6 +208,40 @@ The project is highly modular, making it easy to add backends for additional mod
 
 ---
 
+## Development
+
+### Creating a Release
+
+For maintainers, creating a new release is automated:
+
+```sh
+# Create a new release (will trigger automated build and publish)
+./release.sh v1.0.0
+
+# Create a pre-release
+./release.sh v1.0.0-beta1
+```
+
+The release script will:
+1. Update version numbers in all relevant files
+2. Build and test the binary
+3. Create a git tag and push it
+4. Trigger GitHub Actions to build binaries for all platforms
+5. Automatically create a GitHub release with:
+   - Pre-built binaries for all supported platforms
+   - Checksums for verification
+   - Auto-generated changelog
+   - Installation instructions
+
+### Release Workflow
+
+The GitHub Actions workflow automatically:
+- **Builds** binaries for Linux, macOS, and Windows (multiple architectures)
+- **Creates** a GitHub release with detailed release notes
+- **Uploads** all binaries and checksums
+- **Updates** the Homebrew formula with new version and checksums
+- **Tests** the installation scripts against the new release
+
 ## Extending nlch
 
 ### Adding a New Provider

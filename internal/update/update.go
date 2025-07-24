@@ -19,6 +19,9 @@ const (
 	UpdateURL = "https://api.github.com/repos/" + RepoOwner + "/" + RepoName + "/releases/latest"
 )
 
+// Build version can be set during compilation
+var BuildVersion = "0.1.0"
+
 // Release represents a GitHub release
 type Release struct {
 	TagName string `json:"tag_name"`
@@ -30,8 +33,7 @@ type Release struct {
 
 // GetCurrentVersion returns the current version of nlch
 func GetCurrentVersion() string {
-	// This should match the version in main.go
-	return "0.1.0"
+	return BuildVersion
 }
 
 // CheckForUpdates checks if a newer version is available
