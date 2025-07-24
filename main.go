@@ -58,6 +58,11 @@ const version = "0.1.0"
 func cleanCommand(cmd string) string {
 	cmd = strings.TrimSpace(cmd)
 
+	// Handle empty commands
+	if cmd == "" {
+		return cmd
+	}
+
 	// Remove markdown code blocks
 	if strings.HasPrefix(cmd, "```") {
 		lines := strings.Split(cmd, "\n")
@@ -70,10 +75,12 @@ func cleanCommand(cmd string) string {
 			lines = lines[:len(lines)-1]
 		}
 		cmd = strings.Join(lines, "\n")
+		cmd = strings.TrimSpace(cmd)
 	}
 
 	// Remove backticks at start/end
 	cmd = strings.Trim(cmd, "`")
+	cmd = strings.TrimSpace(cmd)
 
 	// Get first non-empty line as the command
 	lines := strings.Split(cmd, "\n")
@@ -84,7 +91,7 @@ func cleanCommand(cmd string) string {
 		}
 	}
 
-	return strings.TrimSpace(cmd)
+	return cmd
 }
 
 func main() {
@@ -201,7 +208,7 @@ func main() {
 				"Stderr: %s\n"+
 				"Stdout: %s\n\n"+
 				"Please provide a corrected command for the original request: %s\n"+
-				"Only return the corrected shell command, no explanations.",
+				"Return ONLY the shell command, nothing else. Do not use markdown code blocks.",
 			cmd, err.Error(), stderr, stdout, userInput)
 
 		// Get corrected command from LLM
@@ -212,6 +219,11 @@ func main() {
 
 		// Clean up the corrected command (remove markdown code blocks, etc.)
 		correctedCmd = cleanCommand(correctedCmd)
+
+		// Check if we got a valid corrected command
+		if strings.TrimSpace(correctedCmd) == "" {
+			log.Fatalf("LLM did not provide a valid corrected command")
+		}
 
 		// Check if corrected command is dangerous
 		isCorrectedDanger := strings.HasPrefix(correctedCmd, DangerPrefix)
