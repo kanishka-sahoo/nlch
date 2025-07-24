@@ -149,11 +149,14 @@ func main() {
 	// Check for updates in the background (non-blocking)
 	update.NotifyUpdateAvailable()
 
-	// Load config
-	cfg, err := config.Load()
+	// Load config (or create if first launch)
+	cfg, err := config.LoadOrCreate()
 	if err != nil {
-		log.Fatalf("Failed to load config: %v", err)
+		log.Fatalf("Failed to load or create config: %v", err)
 	}
+
+	// Register providers from config
+	provider.RegisterProvidersFromConfig(cfg.Providers)
 
 	// Gather context
 	ctx := gatherContext()
