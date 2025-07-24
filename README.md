@@ -1,11 +1,57 @@
-# Natural Language Command Helper
-`nlch` is a terminal program designed to help you be more productive. It uses context clues from the location it is invoked—such as the current directory, git information, the list of files and folders present—and uses it to generate a terminal command based on natural language input.
+# Natural Language Command Help#### Build
+
+```sh
+go mod tidy         # Install dependencies
+make build          # Build binaries for all supported OS/ARCH
+make install        # Install the binary for your current OS
+
+# To clean up built binaries
+make clean
+```
+
+This project supports cross-platform binary generation for:
+- Linux (amd64, arm64)
+- Windows (amd64)
+- macOS (amd64, arm64)
+
+The `make install` command will copy the correct binary to a standard location for your OS:
+- On Linux/macOS: `/usr/local/bin/nlch`
+- On Windows: `%USERPROFILE%\bin\nlch.exe`
+
+### Manual Installation
+
+You can also manually download the latest release:
+
+1. Go to the [Releases page](https://github.com/kanishka-sahoo/nlch/releases/latest)
+2. Download the appropriate binary for your OS and architecture
+3. Extract and place it in your PATH
+4. Make it executable (Linux/macOS): `chmod +x nlch`inal program designed to help you be more productive. It uses context clues from the location it is invoked—such as the current directory, git information, the list of files and folders present—and uses it to generate a terminal command based on natural language input.
 
 ---
 
 ## Getting Started
 
-### Prerequisites
+### Quick Install (Recommended)
+
+**Linux/macOS:**
+```sh
+curl -fsSL https://raw.githubusercontent.com/kanishka-sahoo/nlch/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+iwr -useb https://raw.githubusercontent.com/kanishka-sahoo/nlch/main/install.ps1 | iex
+```
+
+The installation scripts will:
+- Automatically detect your OS and architecture
+- Download the latest release from GitHub
+- Install the binary to a standard location
+- Verify the installation
+
+### Build from Source
+
+#### Prerequisites
 
 - Go 1.20 or newer (https://golang.org/dl/)
 
@@ -47,10 +93,28 @@ go run main.go "Describe your command here"
 - `--yes-im-sure` — Bypass confirmation for all commands, including dangerous ones
 - `--verbose` — Show provider and model information before generating the command
 - `--version` — Show version and exit
+- `--update` — Check for and install updates
+- `--check-update` — Check for updates without installing
 
 ### Configuration
 
-See below for configuration file details.
+After installation, you'll need to create a configuration file at `~/.config/nlch/nlch.yaml` (Linux/macOS) or `%APPDATA%\nlch\nlch.yaml` (Windows).
+
+See below for configuration file details and examples.
+
+### Auto-Updates
+
+nlch includes built-in update functionality:
+
+- **Automatic Check**: nlch automatically checks for updates once per day and notifies you if a new version is available
+- **Manual Update**: Run `nlch --update` to check for and install updates immediately
+- **Check Only**: Run `nlch --check-update` to check for updates without installing
+
+The update system:
+- Downloads the latest release from GitHub
+- Automatically detects your OS and architecture
+- Safely replaces the current binary
+- Works on Linux, macOS, and Windows
 
 ---
 

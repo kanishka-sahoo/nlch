@@ -3,6 +3,7 @@ package shell
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,11 +15,12 @@ type Executor struct {
 }
 
 // Run executes the given shell command, optionally as a dry-run.
-func (e *Executor) Run(cmd string, requireConfirm bool) error {
+// Returns the command output and error for potential retry logic.
+func (e *Executor) Run(cmd string, requireConfirm bool) (stdout, stderr string, err error) {
 	fmt.Printf("> Running command `%s`...\n", cmd)
 	if e.DryRun {
 		fmt.Println("> This was a dry-run, thus no action was taken.")
-		return nil
+		return "", "", nil
 	}
 	if requireConfirm {
 		fmt.Print("> Confirm? [Y/n]: ")
@@ -27,12 +29,29 @@ func (e *Executor) Run(cmd string, requireConfirm bool) error {
 		resp := scanner.Text()
 		if resp != "" && (resp[0] == 'n' || resp[0] == 'N') {
 			fmt.Println("> Aborted by user.")
-			return nil
+			return "", "", nil
 		}
 	}
+
 	command := exec.Command("bash", "-c", cmd)
-	command.Stdout = os.Stdout
-	command.Stderr = os.Stderr
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+	command.Stdout = &stdoutBuf
+	command.Stderr = &stderrBuf
 	command.Stdin = os.Stdin
-	return command.Run()
+
+	err = command.Run()
+
+	stdout = stdoutBuf.String()
+	stderr = stderrBuf.String()
+
+	// Still print to console for user visibility
+	if stdout != "" {
+		fmt.Print(stdout)
+	}
+	if stderr != "" {
+		fmt.Fprint(os.Stderr, stderr)
+	}
+
+	return stdout, stderr, err
 }
