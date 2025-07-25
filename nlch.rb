@@ -9,7 +9,7 @@
 class Nlch < Formula
   desc "Natural Language Command Helper - Generate terminal commands from natural language"
   homepage "https://github.com/kanishka-sahoo/nlch"
-  version "0.1.0" # This will be updated automatically by the release workflow
+  version "0.3.0" # This will be updated automatically by the release workflow
   
   # These URLs and checksums will be updated automatically for each release
   if OS.mac?

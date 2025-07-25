@@ -20,7 +20,7 @@ const (
 )
 
 // Build version can be set during compilation
-var BuildVersion = "0.1.0"
+var BuildVersion = "0.3.0"
 
 // Release represents a GitHub release
 type Release struct {

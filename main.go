@@ -53,7 +53,7 @@ func gatherContext() *context.Context {
 	return ctx
 }
 
-const version = "0.1.0"
+const version = "0.3.0"
 
 // This variable can be overridden at build time using -ldflags
 var buildVersion = version
